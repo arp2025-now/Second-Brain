@@ -1,0 +1,315 @@
+{
+  "name": "Second Brain",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "second-brain/process",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-process",
+      "name": "Process Item Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "second-brain-process"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "second-brain/calendar",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-calendar",
+      "name": "Calendar Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 600],
+      "webhookId": "second-brain-calendar"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-url",
+              "leftValue": "={{ $json.body.input }}",
+              "rightValue": "http",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-is-url",
+      "name": "Is URL?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.input }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "fetch-url",
+      "name": "Fetch URL Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an AI assistant for a \"Second Brain\" application. Analyze the following content and provide:\n1. A concise, descriptive title (max 100 characters)\n2. A brief summary (2-3 sentences)\n3. The most appropriate category from: Inbox, Notes, Gratitude, Archive, or suggest a new one\n4. The item type: 'link', 'note', or 'idea'\n5. Up to 5 relevant tags\n\nContent to analyze:\n{{ $json.data || $('Process Item Webhook').item.json.body.input }}\n\nRespond in this exact JSON format:\n{\n  \"title\": \"...\",\n  \"summary\": \"...\",\n  \"category\": \"...\",\n  \"item_type\": \"...\",\n  \"tags\": [\"tag1\", \"tag2\"]\n}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "ai-categorize-url",
+      "name": "AI Categorize (URL)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.4,
+      "position": [900, 200],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an AI assistant for a \"Second Brain\" application. Analyze the following text and provide:\n1. A concise, descriptive title (max 100 characters)\n2. A brief summary (2-3 sentences)\n3. The most appropriate category from: Inbox, Notes, Gratitude, Archive, or suggest a new one\n4. The item type: 'link', 'note', or 'idea'\n5. Up to 5 relevant tags\n\nText to analyze:\n{{ $('Process Item Webhook').item.json.body.input }}\n\nRespond in this exact JSON format:\n{\n  \"title\": \"...\",\n  \"summary\": \"...\",\n  \"category\": \"...\",\n  \"item_type\": \"...\",\n  \"tags\": [\"tag1\", \"tag2\"]\n}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "ai-categorize-text",
+      "name": "AI Categorize (Text)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.4,
+      "position": [680, 400],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI response and format for frontend\nconst aiResponse = $input.first().json.message?.content || $input.first().json.text;\n\ntry {\n  // Try to parse as JSON\n  let parsed;\n  \n  // Handle markdown code blocks\n  const jsonMatch = aiResponse.match(/```json\\n?([\\s\\S]*?)\\n?```/);\n  if (jsonMatch) {\n    parsed = JSON.parse(jsonMatch[1]);\n  } else {\n    parsed = JSON.parse(aiResponse);\n  }\n  \n  return {\n    title: parsed.title || 'Untitled',\n    summary: parsed.summary || '',\n    category: parsed.category || 'Inbox',\n    item_type: parsed.item_type || 'note',\n    tags: parsed.tags || [],\n    url: $('Process Item Webhook').item.json.body.input.startsWith('http') \n      ? $('Process Item Webhook').item.json.body.input \n      : undefined\n  };\n} catch (e) {\n  // Fallback if JSON parsing fails\n  return {\n    title: $('Process Item Webhook').item.json.body.input.substring(0, 100),\n    summary: '',\n    category: 'Inbox',\n    item_type: 'note',\n    tags: [],\n    url: undefined\n  };\n}"
+      },
+      "id": "format-response",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond-process",
+      "name": "Respond to Process",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": "primary"
+        },
+        "start": "={{ $now.plus({days: 1}).toISO() }}",
+        "end": "={{ $now.plus({days: 1, hours: 1}).toISO() }}",
+        "additionalFields": {
+          "summary": "={{ $json.body.title }}",
+          "description": "=From Second Brain:\n\n{{ $json.body.description }}\n\nItem ID: {{ $json.body.itemId }}"
+        }
+      },
+      "id": "create-calendar-event",
+      "name": "Create Calendar Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.1,
+      "position": [460, 600],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "google-calendar",
+          "name": "Google Calendar"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"eventId\": \"{{ $json.id }}\",\n  \"eventUrl\": \"{{ $json.htmlLink }}\"\n}",
+        "options": {}
+      },
+      "id": "respond-calendar-success",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [680, 600]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"error\": \"Failed to create calendar event\"\n}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "id": "respond-calendar-error",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [680, 740]
+    }
+  ],
+  "connections": {
+    "Process Item Webhook": {
+      "main": [
+        [
+          {
+            "node": "Is URL?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is URL?": {
+      "main": [
+        [
+          {
+            "node": "Fetch URL Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Categorize (Text)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch URL Content": {
+      "main": [
+        [
+          {
+            "node": "AI Categorize (URL)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Categorize (URL)": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Categorize (Text)": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar Webhook": {
+      "main": [
+        [
+          {
+            "node": "Create Calendar Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Calendar Event": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Second Brain"
+    }
+  ],
+  "triggerCount": 2,
+  "updatedAt": "2026-01-20T00:00:00.000Z",
+  "versionId": "1"
+}
