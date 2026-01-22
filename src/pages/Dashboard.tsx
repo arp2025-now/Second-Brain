@@ -352,9 +352,9 @@ export function Dashboard() {
           title={selectedCategory?.name || 'All Items'}
         />
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6">
           {/* Quick Capture */}
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <QuickCapture onCapture={handleCapture} isProcessing={isProcessing} />
           </div>
 

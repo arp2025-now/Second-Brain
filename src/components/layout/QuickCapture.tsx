@@ -161,8 +161,8 @@ export function QuickCapture({ onCapture, isProcessing }: QuickCaptureProps) {
   return (
     <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-sm overflow-hidden hover:border-indigo-200 transition-colors">
       {/* Input area */}
-      <div className="p-4 pb-2">
-        <div className="flex gap-3">
+      <div className="p-3 sm:p-4 pb-2">
+        <div className="flex gap-2 sm:gap-3">
           <textarea
             ref={textareaRef}
             value={input}
@@ -170,21 +170,21 @@ export function QuickCapture({ onCapture, isProcessing }: QuickCaptureProps) {
             onKeyDown={handleKeyDown}
             placeholder={isListening ? "Listening... speak now" : "Paste a link, write a note, or capture an idea..."}
             rows={1}
-            className={`flex-1 resize-none text-gray-900 placeholder-gray-400 focus:outline-none text-lg ${
+            className={`flex-1 resize-none text-gray-900 placeholder-gray-400 focus:outline-none text-base sm:text-lg ${
               isListening ? 'bg-red-50 rounded-lg px-3 py-2' : ''
             }`}
             disabled={isProcessing}
           />
 
-          {/* Voice input button */}
+          {/* Voice input button - always visible on mobile when recording */}
           {speechSupported && (
             <button
               onClick={toggleListening}
               disabled={isProcessing}
               className={`
-                flex-shrink-0 p-3 rounded-xl transition-all
+                flex-shrink-0 p-3 rounded-xl transition-all touch-manipulation
                 ${isListening
-                  ? 'bg-red-500 text-white animate-pulse'
+                  ? 'bg-red-500 text-white animate-pulse min-w-[48px] min-h-[48px]'
                   : 'bg-gray-100 text-gray-500 hover:bg-indigo-100 hover:text-indigo-600'
                 }
                 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
@@ -196,29 +196,41 @@ export function QuickCapture({ onCapture, isProcessing }: QuickCaptureProps) {
           )}
         </div>
 
-        {/* Voice recording indicator */}
+        {/* Voice recording indicator - with big stop button on mobile */}
         {isListening && (
-          <div className="mt-2 flex items-center gap-2 text-red-600 text-sm">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-            </span>
-            Recording... Click stop or press Capture when done
+          <div className="mt-3 p-3 bg-red-50 rounded-xl border border-red-200">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-red-600 text-sm">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+                <span className="hidden sm:inline">Recording... Click stop when done</span>
+                <span className="sm:hidden">Recording...</span>
+              </div>
+              <button
+                onClick={toggleListening}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg font-medium touch-manipulation min-h-[44px]"
+              >
+                <Square className="w-4 h-4" />
+                Stop
+              </button>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Actions bar */}
-      <div className="px-4 pb-4 flex items-center justify-between gap-4">
+      {/* Actions bar - stacked on mobile */}
+      <div className="px-3 sm:px-4 pb-3 sm:pb-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         {/* Type selector */}
-        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+        <div className="flex items-center justify-center sm:justify-start gap-1 bg-gray-100 rounded-xl p-1 overflow-x-auto">
           {types.map(({ value, label, icon: Icon }) => (
             <button
               key={value}
               onClick={() => setSelectedType(value)}
               className={`
-                flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium
-                transition-all
+                flex items-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-lg text-sm font-medium
+                transition-all touch-manipulation whitespace-nowrap
                 ${
                   selectedType === value
                     ? 'bg-white text-indigo-600 shadow-sm'
@@ -227,18 +239,18 @@ export function QuickCapture({ onCapture, isProcessing }: QuickCaptureProps) {
               `}
             >
               <Icon className="w-4 h-4" />
-              <span className="hidden sm:inline">{label}</span>
+              <span>{label}</span>
             </button>
           ))}
         </div>
 
-        {/* Submit button */}
+        {/* Submit button - full width on mobile */}
         <button
           onClick={handleSubmit}
           disabled={!input.trim() || isProcessing}
           className={`
-            flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold
-            transition-all
+            flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-xl font-semibold
+            transition-all touch-manipulation min-h-[48px]
             ${
               input.trim() && !isProcessing
                 ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200'
@@ -249,7 +261,7 @@ export function QuickCapture({ onCapture, isProcessing }: QuickCaptureProps) {
           {isProcessing ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="hidden sm:inline">Processing...</span>
+              <span>Processing...</span>
             </>
           ) : (
             <>
@@ -260,8 +272,8 @@ export function QuickCapture({ onCapture, isProcessing }: QuickCaptureProps) {
         </button>
       </div>
 
-      {/* Keyboard hint */}
-      <div className="px-4 py-2.5 bg-gradient-to-r from-gray-50 to-indigo-50/50 border-t border-gray-100">
+      {/* Keyboard hint - hidden on mobile */}
+      <div className="hidden sm:block px-4 py-2.5 bg-gradient-to-r from-gray-50 to-indigo-50/50 border-t border-gray-100">
         <p className="text-xs text-gray-500">
           <kbd className="px-1.5 py-0.5 bg-white border border-gray-200 rounded text-gray-600 font-mono text-xs">Ctrl</kbd>
           {' + '}

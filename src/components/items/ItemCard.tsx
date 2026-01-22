@@ -68,12 +68,12 @@ export function ItemCard({
       {/* Colored accent bar */}
       <div className={`h-1 ${config.bg}`} />
 
-      <div className="p-4">
-        {/* Quick actions bar - visible on hover */}
-        <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="p-3 sm:p-4">
+        {/* Quick actions bar - always visible on mobile, hover on desktop */}
+        <div className="absolute top-3 right-3 flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => onToggleStatus(item)}
-            className={`p-2 rounded-xl transition-all ${
+            className={`p-2 rounded-xl transition-all touch-manipulation ${
               item.status === 'read'
                 ? 'bg-emerald-100 text-emerald-600'
                 : 'bg-gray-100 text-gray-400 hover:bg-emerald-100 hover:text-emerald-600'
@@ -85,7 +85,7 @@ export function ItemCard({
 
           <button
             onClick={() => onToggleFavorite(item)}
-            className={`p-2 rounded-xl transition-all ${
+            className={`hidden sm:block p-2 rounded-xl transition-all ${
               item.is_favorite
                 ? 'bg-amber-100 text-amber-500'
                 : 'bg-gray-100 text-gray-400 hover:bg-amber-100 hover:text-amber-500'
@@ -97,7 +97,7 @@ export function ItemCard({
 
           <button
             onClick={() => onArchive(item)}
-            className="p-2 rounded-xl bg-gray-100 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-all"
+            className="hidden sm:block p-2 rounded-xl bg-gray-100 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-all"
             title="Archive"
           >
             <Archive className="w-4 h-4" />
@@ -105,11 +105,19 @@ export function ItemCard({
 
           <DropdownMenu
             trigger={
-              <button className="p-2 rounded-xl bg-gray-100 text-gray-400 hover:bg-gray-200 transition-all">
+              <button className="p-2 rounded-xl bg-gray-100 text-gray-400 hover:bg-gray-200 transition-all touch-manipulation">
                 <MoreHorizontal className="w-4 h-4" />
               </button>
             }
           >
+            <DropdownItem onClick={() => onToggleFavorite(item)}>
+              <Star className="w-4 h-4" />
+              {item.is_favorite ? 'Remove favorite' : 'Add to favorites'}
+            </DropdownItem>
+            <DropdownItem onClick={() => onArchive(item)}>
+              <Archive className="w-4 h-4" />
+              Archive
+            </DropdownItem>
             <DropdownItem onClick={() => onAddToCalendar(item)}>
               <Calendar className="w-4 h-4" />
               Add to Calendar
@@ -130,13 +138,13 @@ export function ItemCard({
         </div>
 
         {/* Type icon + Title */}
-        <div className="flex items-start gap-3 pr-32">
-          <div className={`p-2.5 rounded-xl ${config.light}`}>
-            <TypeIcon className={`w-5 h-5 ${config.text}`} />
+        <div className="flex items-start gap-2 sm:gap-3 pr-20 sm:pr-32">
+          <div className={`p-2 sm:p-2.5 rounded-xl ${config.light} flex-shrink-0`}>
+            <TypeIcon className={`w-4 h-4 sm:w-5 sm:h-5 ${config.text}`} />
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 leading-tight mb-1">
+            <h3 className="font-semibold text-gray-900 leading-tight mb-1 text-sm sm:text-base">
               {item.title}
             </h3>
 
@@ -175,8 +183,8 @@ export function ItemCard({
         )}
 
         {/* Tags and metadata */}
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             {/* Category badge */}
             {item.category && (
               <span
