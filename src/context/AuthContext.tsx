@@ -6,7 +6,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signInWithMagicLink: (email: string, fullName?: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<void>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
 }
@@ -71,12 +72,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithMagicLink = async (email: string, fullName?: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
       email,
+      password,
+    });
+    if (error) throw error;
+  };
+
+  const signUp = async (email: string, password: string, fullName?: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
       options: {
         data: fullName ? { full_name: fullName } : undefined,
-        emailRedirectTo: window.location.origin,
       },
     });
     if (error) throw error;
@@ -103,7 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         session,
         loading,
-        signInWithMagicLink,
+        signIn,
+        signUp,
         signOut,
         signInWithGoogle,
       }}
